@@ -5,6 +5,9 @@ import Register from "./pages/Register";
 import ProtectedRoute from "./componants/ProtectedRoute";
 import Logout from "./auth/Logout"
 import TutorRegister from "./pages/TutorRegister";
+import TutorSearch from "./pages/TutorSearch";
+import TutorFilter from "./pages/TutorFilter";
+
 
 function App() {
   return (
@@ -15,6 +18,8 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/logout" element={<Logout />} />
         <Route path="/tutor/register" element={<TutorRegister />} />
+        <Route path="/tutors/find" element={<TutorSearch />} />
+        <Route path="/tutor/filter" element={<TutorFilter />} />
 
         <Route path="/profile" element={
           <ProtectedRoute>

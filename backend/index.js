@@ -4,6 +4,7 @@ const cors = require("cors");
 const loginRoute = require('./auth/login');
 const userRegisterRoute = require("./controllers/userRegister");
 const tutorRegister = require("./controllers/tutorRegister");
+const tutorFindRoute = require("./controllers/tutorFindRoute");
 
 let app = express();
 let port = 8080;
@@ -19,6 +20,7 @@ async function main() {
 app.use('/api/auth', loginRoute);
 app.use('/api/auth', userRegisterRoute);
 app.use('/api/tutor', tutorRegister);
+app.use("/api/tutors", tutorFindRoute);
 
 
 app.get("/", (req, res) => {
