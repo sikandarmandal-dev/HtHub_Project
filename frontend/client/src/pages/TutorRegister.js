@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 function TutorRegister() {
     const [formData, setFormData] = useState({
         name: "",
         email: "",
+        password: "",
         subject: "",
         experience: "",
         location: "",
@@ -12,6 +14,7 @@ function TutorRegister() {
         fees: "",
         availability: ""
     });
+    const navigate = useNavigate();
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -21,13 +24,15 @@ function TutorRegister() {
         e.preventDefault();
         try {
             const res = await axios.post("http://localhost:8080/api/tutor/register", formData);
-            alert("Tutor registered successfully!");
-            console.log(res.data);
+            console.log("Response:", res.data);
+            // alert("Tutor registered successfully!");
+            navigate("/login");  // ✅ direct redirect
         } catch (err) {
-            console.error(err);
+            console.error("Register error:", err.response?.data || err.message);
             alert("Error registering tutor");
         }
     };
+
 
     return (
         <div className="container mt-5">
@@ -60,7 +65,18 @@ function TutorRegister() {
                                 required
                             />
                         </div>
-
+                        <div className="mb-3">
+                            <label className="form-label">Password</label>
+                            <input
+                                type="password"
+                                name="password"
+                                placeholder="Password"
+                                className="form-control"
+                                value={formData.password}
+                                onChange={handleChange}
+                                required
+                            />
+                        </div>
                         <div className="mb-3">
                             <label className="form-label">Subject</label>
                             <input
@@ -129,7 +145,7 @@ function TutorRegister() {
                         </div>
 
                         <button type="submit" className="btn btn-success w-100">
-                            Register Tutors
+                            Register Tutor
                         </button>
                     </form>
                 </div>

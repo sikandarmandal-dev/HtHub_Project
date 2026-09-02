@@ -1,71 +1,89 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import axios from "axios";
 import TutorFilter from "./TutorFilter";
 
 function TutorList() {
     const [tutors, setTutors] = useState([]);
-    const [filters, setFilters] = useState({ location: "", subject: "", keyword: "" });
+    const [loading, setLoading] = useState(false);
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
 
-    useEffect(() => {
-        const fetchTutors = async () => {
-            try {
-                const res = await axios.get("http://localhost:8080/api/tutors/find");
-                setTutors(res.data);
-            } catch (err) {
-                console.error(err);
+    // ✅ AI search function
+    const searchWithAI = async (query, newPage = 1) => {
+        setLoading(true);
+        try {
+            const res = await axios.post("http://localhost:8080/api/tutors/search-ai", { query, page: newPage, limit: 6 });
+            if (newPage === 1) {
+                setTutors(res.data.tutors); // first search
+            } else {
+                setTutors([...tutors, ...res.data.tutors]); // load more
             }
-        };
-        fetchTutors();
-    }, []);
-
-    const filteredTutors = tutors.filter((tutor) => {
-        const matchLocation = filters.location
-            ? tutor.location?.toLowerCase() === filters.location.toLowerCase()
-            : true;
-
-        const matchSubject = filters.subject
-            ? tutor.subject?.toLowerCase() === filters.subject.toLowerCase()
-            : true;
-
-        const matchKeyword = filters.keyword
-            ? tutor.name?.toLowerCase().includes(filters.keyword.toLowerCase()) ||
-            tutor.subject?.toLowerCase().includes(filters.keyword.toLowerCase()) ||
-            tutor.location?.toLowerCase().includes(filters.keyword.toLowerCase())
-            : true;
-
-        return matchLocation && matchSubject && matchKeyword;
-    });
+            setTotalPages(res.data.totalPages);
+            setPage(res.data.currentPage);
+        } catch (err) {
+            console.error("Error fetching tutors:", err);
+        }
+        setLoading(false);
+    };
 
     return (
-        <div className="container mt-5">
-            <TutorFilter onFilter={setFilters} />
+        <div className="container mt-4">
+            {/* ✅ Manual Filters (optional) */}
+            <TutorFilter onFilter={setTutors} />
 
+            {/* ✅ Tutor Results */}
             <div className="row mt-4">
-                {filteredTutors.length > 0 ? (
-                    filteredTutors.map((tutor) => (
+                {loading && <p className="text-center">Loading tutors...</p>}
+
+                {tutors.length > 0 ? (
+                    tutors.map((tutor) => (
                         <div className="col-md-4 mb-4" key={tutor._id}>
-                            <div className="card shadow h-100">
+                            <div
+                                className="card h-100 border-0 shadow-lg rounded-4"
+                                style={{ transition: "transform 0.2s", cursor: "pointer" }}
+                                onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.03)"}
+                                onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
+                            >
                                 <div className="card-body">
-                                    <h5 className="card-title text-primary">{tutor.name}</h5>
-                                    <p className="card-text">
-                                        <strong>Subject:</strong> {tutor.subject} <br />
-                                        <strong>Location:</strong> {tutor.location} <br />
-                                        <strong>Fees:</strong> ₹{tutor.fees} / hour
+                                    <h5 className="card-title text-primary fw-bold mb-2">{tutor.name}</h5>
+                                    <p className="card-text mb-3">
+                                        <span className="badge bg-info text-dark me-2">📘 {tutor.subject}</span>
+                                        <span className="badge bg-secondary">📍 {tutor.location}</span>
+                                    </p>
+                                    <p className="card-text fs-6">
+                                        <strong>Fees:</strong>{" "}
+                                        <span className="text-success fw-semibold">₹{tutor.fees} / hour</span>
                                     </p>
                                 </div>
-                                <div className="card-footer text-center">
-                                    <button className="btn btn-success btn-sm">Contact Tutor</button>
+
+                                <div className="card-footer bg-light text-center border-0">
+                                    <button className="btn btn-success w-100 fw-bold rounded-pill">
+                                        ✉️ Contact Tutor
+                                    </button>
                                 </div>
                             </div>
                         </div>
                     ))
                 ) : (
-                    <p className="text-center text-muted">No tutors found</p>
+                    !loading && (
+                        <p className="text-center text-danger fw-bold">
+                            ❌ No tutors found. Try different keywords.
+                        </p>
+                    )
                 )}
             </div>
+            {!loading && page < totalPages && (
+                <div className="text-center mt-3">
+                    <button
+                        className="btn btn-outline-primary fw-bold rounded-pill"
+                        onClick={() => searchWithAI("", page + 1)} // next page load
+                    >
+                        🔽 Load More Tutors
+                    </button>
+                </div>
+            )}
         </div>
     );
 }
 
 export default TutorList;
-

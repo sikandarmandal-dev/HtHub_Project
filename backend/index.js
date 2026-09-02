@@ -1,10 +1,13 @@
 const express = require("express");
+require("dotenv").config();
 const mongoose = require("mongoose");
 const cors = require("cors");
 const loginRoute = require('./auth/login');
 const userRegisterRoute = require("./controllers/userRegister");
 const tutorRegister = require("./controllers/tutorRegister");
 const tutorFindRoute = require("./controllers/tutorFindRoute");
+const aiFindRoute = require("./controllers/aiFindRoute");
+
 
 let app = express();
 let port = 8080;
@@ -21,6 +24,7 @@ app.use('/api/auth', loginRoute);
 app.use('/api/auth', userRegisterRoute);
 app.use('/api/tutor', tutorRegister);
 app.use("/api/tutors", tutorFindRoute);
+// app.use("/api/ai", aiFindRoute);
 
 
 app.get("/", (req, res) => {

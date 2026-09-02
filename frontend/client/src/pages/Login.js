@@ -17,8 +17,7 @@ function Login() {
             alert("Login successful");
 
             localStorage.setItem("token", res.data.token);
-
-            navigate("/");
+            navigate("/studentdashboard");
         } catch (err) {
             alert("Login failed");
         }

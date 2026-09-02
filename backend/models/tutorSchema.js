@@ -11,6 +11,10 @@ const tutorModel = new mongoose.Schema({
         required: true,
         unique: true,
     },
+    password: {
+        type: String,
+        required: true,
+    },
     subject: {
         type: String,
         required: true,
