@@ -1,38 +1,27 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import Home from "./home/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import ProtectedRoute from "./auth/ProtectedRoute";
-import Logout from "./auth/Logout"
-import TutorRegister from "./pages/TutorRegister";
 import TutorSearch from "./pages/TutorSearch";
-import TutorFilter from "./pages/TutorFilter";
 import StudentDashboard from "./dashboards/StudentDashboard";
 import TutorDashboard from "./dashboards/TutorDashboard";
+import ProtectedRoute from "./auth/ProtectedRoute";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 
+function DashboardRedirect() {
+    const { user } = useAuth();
+    return <Navigate to={user?.role === "tutor" ? "/tutordashboard" : "/studentdashboard"} replace />;
+}
 
-function App() {
-  return (
-    <Router>
-      <Routes>
+export default function App() {
+    return <AuthProvider><BrowserRouter><Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/logout" element={<Logout />} />
-        <Route path="/tutor/register" element={<TutorRegister />} />
         <Route path="/tutors/find" element={<TutorSearch />} />
-        <Route path="/tutor/filter" element={<TutorFilter />} />
-        <Route path="/tutordashboard" element={<TutorDashboard />} />
-        <Route path="/studentdashboard" element={<StudentDashboard />} />
-
-        <Route path="/profile" element={
-          <ProtectedRoute>
-            <h2>User Profile (Protected)</h2>
-          </ProtectedRoute>
-        } />
-      </Routes>
-    </Router>
-  );
+        <Route path="/dashboard" element={<ProtectedRoute><DashboardRedirect /></ProtectedRoute>} />
+        <Route path="/studentdashboard" element={<ProtectedRoute role="student"><StudentDashboard /></ProtectedRoute>} />
+        <Route path="/tutordashboard" element={<ProtectedRoute role="tutor"><TutorDashboard /></ProtectedRoute>} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes></BrowserRouter></AuthProvider>;
 }
-
-export default App;

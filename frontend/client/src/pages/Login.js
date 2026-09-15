@@ -1,47 +1,33 @@
-import React, { useState } from "react";
-import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import api from "../api";
+import { useAuth } from "../context/AuthContext";
 
-function Login() {
-    const [formData, setFormData] = useState({ email: "", password: "" });
+export default function Login() {
+    const [form, setForm] = useState({ email: "", password: "" });
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
+    const { login } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
 
-    const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    async function submit(event) {
+        event.preventDefault(); setError(""); setLoading(true);
         try {
-            const res = await axios.post("http://localhost:8080/api/auth/login", formData);
-            alert("Login successful");
+            const { data } = await api.post("/auth/login", form);
+            login(data.token, data.user);
+            navigate(location.state?.from?.pathname || "/dashboard", { replace: true });
+        } catch (err) { setError(err.response?.data?.message || "Unable to sign in. Please try again."); }
+        finally { setLoading(false); }
+    }
 
-            localStorage.setItem("token", res.data.token);
-            navigate("/studentdashboard");
-        } catch (err) {
-            alert("Login failed");
-        }
-    };
-
-    return (
-        <div className="container mt-5">
-            <h2 className="mb-4">Login</h2>
-            <form onSubmit={handleSubmit} className="p-4 border rounded shadow-sm">
-                <div className="mb-3">
-                    <label className="form-label">Email</label>
-                    <input name="email" type="email" className="form-control" onChange={handleChange} required />
-                </div>
-                <div className="mb-3">
-                    <label className="form-label">Password</label>
-                    <input name="password" type="password" className="form-control" onChange={handleChange} required />
-                </div>
-                <button type="submit" className="btn btn-success w-100">Login</button>
-            </form>
-        </div>
-    );
+    return <main className="auth-shell"><form className="auth-card" onSubmit={submit}>
+        <span className="eyebrow">WELCOME BACK</span><h1>Sign in to HomeTutor</h1>
+        <p className="muted">Continue managing your learning journey.</p>
+        {error && <div className="alert">{error}</div>}
+        <label>Email<input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required /></label>
+        <label>Password<input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required /></label>
+        <button className="button button-primary" disabled={loading}>{loading ? "Signing in..." : "Sign in"}</button>
+        <p className="auth-footer">New to HomeTutor? <Link to="/register">Create an account</Link></p>
+    </form></main>;
 }
-
-export default Login;
-
-
-

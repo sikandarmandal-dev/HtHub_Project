@@ -1,55 +1,24 @@
-import React, { useState } from "react";
-import axios from "axios";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import api from "../api";
 
-function Register() {
-    const [formData, setFormData] = useState({
-        name: "",
-        email: "",
-        password: "",
-        role: "student"
-    });
-
-    const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            const res = await axios.post("http://localhost:8080/api/auth/register", formData);
-            alert(res.data.message);
-        } catch (err) {
-            alert("Error registering user");
-        }
-    };
-
-    return (
-        <div className="container mt-5">
-            <h2 className="mb-4">Register</h2>
-            <form onSubmit={handleSubmit} className="p-4 border rounded shadow-sm">
-                <div className="mb-3">
-                    <label className="form-label">Name</label>
-                    <input name="name" className="form-control" onChange={handleChange} required />
-                </div>
-                <div className="mb-3">
-                    <label className="form-label">Email</label>
-                    <input name="email" type="email" className="form-control" onChange={handleChange} required />
-                </div>
-                <div className="mb-3">
-                    <label className="form-label">Password</label>
-                    <input name="password" type="password" className="form-control" onChange={handleChange} required />
-                </div>
-                <div className="mb-3">
-                    <label className="form-label">Role</label>
-                    <select name="role" className="form-select" onChange={handleChange}>
-                        <option value="student">Student</option>
-                        <option value="tutor">Tutor</option>
-                    </select>
-                </div>
-                <button type="submit" className="btn btn-primary w-100">Register</button>
-            </form>
-        </div>
-    );
+export default function Register() {
+    const [form, setForm] = useState({ name: "", email: "", password: "", role: "student" });
+    const [error, setError] = useState("");
+    const [complete, setComplete] = useState(false);
+    const navigate = useNavigate();
+    async function submit(event) {
+        event.preventDefault(); setError("");
+        try { await api.post("/auth/register", form); setComplete(true); setTimeout(() => navigate("/login"), 1200); }
+        catch (err) { setError(err.response?.data?.message || "Unable to create your account."); }
+    }
+    return <main className="auth-shell"><form className="auth-card" onSubmit={submit}>
+        <span className="eyebrow">GET STARTED</span><h1>Create your account</h1><p className="muted">Find the right learning support in minutes.</p>
+        {error && <div className="alert">{error}</div>}{complete && <div className="success">Account created. Redirecting to sign in...</div>}
+        <label>Full name<input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></label>
+        <label>Email<input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required /></label>
+        <label>Password<input type="password" minLength="8" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required /></label>
+        <label>I am a<select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}><option value="student">Student / parent</option><option value="tutor">Tutor</option></select></label>
+        <button className="button button-primary">Create account</button><p className="auth-footer">Already registered? <Link to="/login">Sign in</Link></p>
+    </form></main>;
 }
-
-export default Register;

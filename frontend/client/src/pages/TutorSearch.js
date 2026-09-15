@@ -1,89 +1,27 @@
-import React, { useState } from "react";
-import axios from "axios";
-import TutorFilter from "./TutorFilter";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import api from "../api";
+import { useAuth } from "../context/AuthContext";
 
-function TutorList() {
+export default function TutorSearch() {
+    const [filters, setFilters] = useState({ subject: "", location: "" });
     const [tutors, setTutors] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [page, setPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
-
-    // ✅ AI search function
-    const searchWithAI = async (query, newPage = 1) => {
-        setLoading(true);
-        try {
-            const res = await axios.post("http://localhost:8080/api/tutors/search-ai", { query, page: newPage, limit: 6 });
-            if (newPage === 1) {
-                setTutors(res.data.tutors); // first search
-            } else {
-                setTutors([...tutors, ...res.data.tutors]); // load more
-            }
-            setTotalPages(res.data.totalPages);
-            setPage(res.data.currentPage);
-        } catch (err) {
-            console.error("Error fetching tutors:", err);
-        }
-        setLoading(false);
-    };
-
-    return (
-        <div className="container mt-4">
-            {/* ✅ Manual Filters (optional) */}
-            <TutorFilter onFilter={setTutors} />
-
-            {/* ✅ Tutor Results */}
-            <div className="row mt-4">
-                {loading && <p className="text-center">Loading tutors...</p>}
-
-                {tutors.length > 0 ? (
-                    tutors.map((tutor) => (
-                        <div className="col-md-4 mb-4" key={tutor._id}>
-                            <div
-                                className="card h-100 border-0 shadow-lg rounded-4"
-                                style={{ transition: "transform 0.2s", cursor: "pointer" }}
-                                onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.03)"}
-                                onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
-                            >
-                                <div className="card-body">
-                                    <h5 className="card-title text-primary fw-bold mb-2">{tutor.name}</h5>
-                                    <p className="card-text mb-3">
-                                        <span className="badge bg-info text-dark me-2">📘 {tutor.subject}</span>
-                                        <span className="badge bg-secondary">📍 {tutor.location}</span>
-                                    </p>
-                                    <p className="card-text fs-6">
-                                        <strong>Fees:</strong>{" "}
-                                        <span className="text-success fw-semibold">₹{tutor.fees} / hour</span>
-                                    </p>
-                                </div>
-
-                                <div className="card-footer bg-light text-center border-0">
-                                    <button className="btn btn-success w-100 fw-bold rounded-pill">
-                                        ✉️ Contact Tutor
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    ))
-                ) : (
-                    !loading && (
-                        <p className="text-center text-danger fw-bold">
-                            ❌ No tutors found. Try different keywords.
-                        </p>
-                    )
-                )}
-            </div>
-            {!loading && page < totalPages && (
-                <div className="text-center mt-3">
-                    <button
-                        className="btn btn-outline-primary fw-bold rounded-pill"
-                        onClick={() => searchWithAI("", page + 1)} // next page load
-                    >
-                        🔽 Load More Tutors
-                    </button>
-                </div>
-            )}
-        </div>
-    );
+    const [loading, setLoading] = useState(true);
+    const [message, setMessage] = useState("");
+    const { isAuthenticated } = useAuth();
+    const navigate = useNavigate();
+    async function search(event) {
+        event?.preventDefault(); setLoading(true); setMessage("");
+        try { const { data } = await api.get("/tutors", { params: filters }); setTutors(data.tutors); if (!data.tutors.length) setMessage("No tutors match those filters yet."); }
+        catch { setMessage("We couldn't load tutors. Please try again."); } finally { setLoading(false); }
+    }
+    useEffect(() => { search(); }, []);
+    async function requestLesson(tutor) {
+        if (!isAuthenticated) return navigate("/login");
+        const date = window.prompt("Preferred lesson date (YYYY-MM-DD):");
+        if (!date) return;
+        try { await api.post("/bookings", { tutorId: tutor._id, subject: tutor.subject, preferredDate: date }); window.alert("Request sent. The tutor will respond shortly."); }
+        catch (error) { window.alert(error.response?.data?.message || "Could not send request."); }
+    }
+    return <main className="search-page"><nav className="search-nav"><Link className="brand dark" to="/">hometutor<span>.</span></Link><Link to={isAuthenticated ? "/dashboard" : "/login"}>{isAuthenticated ? "Dashboard" : "Sign in"} →</Link></nav><section className="search-hero"><p className="eyebrow">FIND YOUR MATCH</p><h1>Learn from someone<br /><em>who gets you.</em></h1><p className="muted">Search trusted tutors by subject and location, then request a lesson that fits your schedule.</p><form className="search-box" onSubmit={search}><input placeholder="Subject e.g. Mathematics" value={filters.subject} onChange={(e) => setFilters({ ...filters, subject: e.target.value })} /><input placeholder="Location e.g. Ranchi" value={filters.location} onChange={(e) => setFilters({ ...filters, location: e.target.value })} /><button className="button button-primary">Search tutors</button></form></section><section className="results-section"><div className="results-heading"><h2>Available tutors</h2><span>{loading ? "Searching..." : `${tutors.length} results`}</span></div>{message && <div className="empty-state"><strong>{message}</strong></div>}<div className="tutor-grid">{tutors.map((tutor) => <article className="tutor-card" key={tutor._id}><div className="avatar">{tutor.name?.charAt(0)}</div><div className="tutor-card-main"><h3>{tutor.name}</h3><p className="tutor-meta">{tutor.subject} · {tutor.location}</p><p className="muted">{tutor.experience} experience · {tutor.timing}</p><div className="tutor-bottom"><strong>₹{tutor.fees || "—"} <small>/ hour</small></strong><button className="button button-small button-primary" onClick={() => requestLesson(tutor)}>Request lesson</button></div></div></article>)}</div></section></main>;
 }
-
-export default TutorList;
